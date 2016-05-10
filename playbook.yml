@@ -1,0 +1,7 @@
+---
+- hosts: myservers
+  remote_user: "{{ remote_user }}"
+  roles:
+    - {role: base, tags: common}
+    
+    
