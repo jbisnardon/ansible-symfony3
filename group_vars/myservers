@@ -1,0 +1,10 @@
+---
+remote_user: root
+locale: en_US.UTF-8
+timezone: Europe/Paris
+user: ##
+group: ##
+uid: 2000
+gid: 2000
+admin_public_keys:
+    - ssh-rsa ##
