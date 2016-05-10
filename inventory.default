@@ -1,0 +1,2 @@
+[myservers]
+ some.server.com ansible_ssh_user=root env=production port=22
