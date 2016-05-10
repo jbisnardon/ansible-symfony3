@@ -1,0 +1,98 @@
+---
+  - name: Generate locale
+    command: locale-gen {{ locale }}
+    tags: locale
+
+  - name: Set locale
+    command: update-locale LANG={{ locale }} LC_ALL={{ locale }}
+    tags: locale
+
+  - name: Source locale config
+    shell: export LANG={{ locale }} && export LC_ALL={{ locale }}
+    tags: locale
+
+  - name: Set localtime
+    file: src=/usr/share/zoneinfo/{{ timezone }} dest=/etc/localtime state=link force=yes
+    tags: timezone
+
+  - name: Reconfigure timezone
+    command: dpkg-reconfigure --frontend noninteractive tzdata
+    tags: timezone
+
+  - name: "Rsyslog: use high precision time format"
+    lineinfile: dest=/etc/rsyslog.conf regexp="^\$ActionFileDefaultTemplate" state=absent
+    tags: rsyslog
+
+  - name: Restart rsyslog
+    service: name=rsyslog state=restarted
+    tags: rsyslog
+
+  - name: Install sysadmins public keys on root
+    authorized_key: user=root
+                    key="{{ item }}"
+    with_items: admin_public_keys
+    tags: ssh
+
+  - name: Disable ssh pwd auth
+    lineinfile:
+      dest=/etc/ssh/sshd_config
+      regexp=PasswordAuthentication
+      line="PasswordAuthentication no"
+    tags: sshd
+  
+  - name: Change port
+    lineinfile:
+      dest=/etc/ssh/sshd_config
+      regexp="Port 22"
+      line="Port 4444"
+    tags: sshd
+
+  - name: Restart sshd
+    command: service ssh restart
+    tags: sshd
+    
+  - name: Ansible dependencies
+    shell: apt-key update && apt-get update && apt-get install --yes python-apt
+    tags: package dependencies
+
+  - name: Configure system dependencies packages
+    apt: name={{ item }} state=latest
+    with_items:
+      - bwm-ng
+      - curl
+      - dstat
+      - fail2ban
+      - figlet
+      - git
+      - htop
+      - iftop
+      - logrotate
+      - make
+      - mtr
+      - nmap
+      - ntpdate
+      - pbzip2
+      - postfix
+      - python
+      - screen
+      - smartmontools
+      - socat
+      - strace
+      - tcpdump
+      - traceroute
+      - unzip
+      - vim
+      - wget
+    tags: package dependencies
+
+  - name: Install global SSH known hosts
+    shell: ssh-keyscan github.com > /etc/ssh/ssh_known_hosts
+
+  - name: Global SSH known hosts permissions
+    file: path=/etc/ssh/ssh_known_hosts owner=root group=root backup=yes mode=0644
+
+  - name: Copy ntpdate script and update time hourly
+    copy: src=ntpdate dest=/etc/cron.hourly/ntpdate owner=root group=root mode=0754
+    tags: ntpdate
+
+  
